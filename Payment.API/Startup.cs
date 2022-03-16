@@ -12,6 +12,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using MassTransit;
+using Payment.API.Consumers;
+using Shared;
 
 namespace Payment.API
 {
@@ -29,13 +31,14 @@ namespace Payment.API
         {
             services.AddMassTransit(x =>
             {
-
-                x.UsingRabbitMq((context, cfg) =>   //Default port 5672
+                x.AddConsumer<StockReservedEventConsumer>();
+                x.UsingRabbitMq((context, cfg) =>
                 {
-                    cfg.Host(Configuration["RabbitMQUrl"], "/", host =>
+                    cfg.Host(Configuration.GetConnectionString("RabbitMQ"));
+
+                    cfg.ReceiveEndpoint(RabbitMqConstants.StockReservedEventQueueName, e =>
                     {
-                        host.Username("guest");
-                        host.Password("guest");
+                        e.ConfigureConsumer<StockReservedEventConsumer>(context);
                     });
                 });
             });

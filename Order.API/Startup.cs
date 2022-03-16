@@ -11,6 +11,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using MassTransit;
+using Microsoft.EntityFrameworkCore;
+using Order.API.Consumer;
+using Order.API.Models;
+using Shared;
 
 namespace Order.API
 {
@@ -29,17 +33,36 @@ namespace Order.API
             services.AddMassTransit(x =>
             {
 
-                x.UsingRabbitMq((context, cfg) =>   //Default port 5672
+                x.AddConsumer<PaymentCompletedEventConsumer>();
+                x.AddConsumer<PaymentFailedEventConsumer>();
+                x.AddConsumer<StockNotReservedEventConsumer>();
+                x.UsingRabbitMq((context, cfg) =>
                 {
-                    cfg.Host(Configuration["RabbitMQUrl"], "/", host =>
+                    cfg.Host(Configuration.GetConnectionString("RabbitMQ"));
+
+                    cfg.ReceiveEndpoint(RabbitMqConstants.OrderPaymentCompletedEventQueueName, e =>
                     {
-                        host.Username("guest");
-                        host.Password("guest");
+                        e.ConfigureConsumer<PaymentCompletedEventConsumer>(context);
+                    });
+
+                    cfg.ReceiveEndpoint(RabbitMqConstants.OrderPaymentFailedEventQueueName, e =>
+                    {
+                        e.ConfigureConsumer<PaymentFailedEventConsumer>(context);
+                    });
+
+                    cfg.ReceiveEndpoint(RabbitMqConstants.OrderStockNotReservedEventQueueName, e =>
+                    {
+                        e.ConfigureConsumer<StockNotReservedEventConsumer>(context);
                     });
                 });
             });
 
             services.AddMassTransitHostedService();
+
+            services.AddDbContext<AppDbContext>(options =>
+            {
+                options.UseSqlServer(Configuration.GetConnectionString("SqlCon"));
+            });
 
             services.AddControllers();
             services.AddSwaggerGen(c =>
