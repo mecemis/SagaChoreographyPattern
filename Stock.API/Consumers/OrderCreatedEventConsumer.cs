@@ -31,7 +31,7 @@ namespace Stock.API.Consumers
 
             foreach (var item in context.Message.orderItems)
             {
-                stockResult.Add(await _context.Stocks.AnyAsync(x => x.ProductId == item.ProductId && x.Count > item.Count));
+                stockResult.Add(await _context.Stocks.AnyAsync(x => x.ProductId == item.ProductId && x.Count >= item.Count));
             }
 
             if (stockResult.All(x => x.Equals(true)))
