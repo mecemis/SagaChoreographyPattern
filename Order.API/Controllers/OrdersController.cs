@@ -23,7 +23,7 @@ namespace Order.API.Controllers
             _publishEndpoint = publishEndpoint;
         }
 
-        [HttpGet]
+        [HttpPost]
         public async Task<IActionResult> Create(OrderCreateDto orderCreate)
         {
             var newOrder = new Models.Order
